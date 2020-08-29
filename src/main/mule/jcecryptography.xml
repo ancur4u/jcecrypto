@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:crypto="http://www.mulesoft.org/schema/mule/crypto"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/crypto http://www.mulesoft.org/schema/mule/crypto/current/mule-crypto.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="71c2bddf-1166-4ee7-b3b7-51cf5073facf" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="f94e5c06-dc19-46d8-9944-65ef4a15e531" >
+		<file:connection workingDir="/Users/ankurparashar/AnypointStudio/studio-workspace/cryptography/src/main/resources" />
+	</file:config>
+	<crypto:jce-config name="Crypto_Jce" doc:name="Crypto Jce" doc:id="a2b5724a-a428-4e6b-a15f-701c6b9ad674" keystore="selfsigned.jck" password="password" type="JCEKS">
+		<crypto:jce-key-infos >
+			<crypto:jce-symmetric-key-info keyId="jceks" alias="aeskey" password="password" />
+		</crypto:jce-key-infos>
+	</crypto:jce-config>
+	<crypto:jce-config name="Crypto_Jce1" doc:name="Crypto Jce" doc:id="d4826d89-fa69-429c-8371-49891b0926c6" keystore="selfsigned.jck" password="password" type="JCEKS">
+		<crypto:jce-key-infos >
+			<crypto:jce-symmetric-key-info keyId="jceks" alias="aeskey" password="password" />
+		</crypto:jce-key-infos>
+	</crypto:jce-config>
+	<crypto:jce-config name="Crypto_Jce2" doc:name="Crypto Jce" doc:id="c7ba926f-c4b1-49e2-8b38-fc69061a7f05" keystore="selfsigned.jck" type="JCEKS" password="password" >
+		<crypto:jce-key-infos >
+			<crypto:jce-symmetric-key-info keyId="jceks" alias="aeskey" password="password" />
+		</crypto:jce-key-infos>
+	</crypto:jce-config>
+	<flow name="jcecryptography_pbe" doc:id="6b1fa3b6-319e-4d65-b3cc-e3c053ba0217" >
+		<http:listener doc:name="Listener" doc:id="84a92505-f04a-4bd6-9660-c342e4bcb746" config-ref="HTTP_Listener_config" path="/jcepbe" allowedMethods="POST"/>
+		<logger level="INFO" doc:name="Logger" doc:id="b69dc78c-9e24-456d-bb15-2be6f837a0a4" message='Received payload:  #[payload]'/>
+		<crypto:jce-encrypt-pbe doc:name="Jce encrypt pbe" doc:id="b11cf11b-43a2-4806-9f28-62992880f578" password="Mulesoft"/>
+		<logger level="INFO" doc:name="Logger" doc:id="56585f9e-042b-400e-a9a5-d178a11da6d1" message="JCE Password Based Encrypted  payload: #[payload]"/>
+		<crypto:jce-decrypt-pbe doc:name="Jce decrypt pbe" doc:id="4fb78fcd-ddfa-4c90-8f5f-dc356e5dd401" password="Mulesoft"/>
+		<logger level="INFO" doc:name="Logger" doc:id="33f18d99-6c84-4af4-8516-aadf384cca35" message="JCE Password based decrypted payload: #[payload]"/>
+	</flow>
+	<flow name="jcecryptography_pbeSignedStream" doc:id="0f09f94a-384c-4be3-aad4-8bc064418326" >
+		<http:listener doc:name="Listener" doc:id="f87271c6-31e4-4e94-ab98-dec7bfe810e8" config-ref="HTTP_Listener_config" path="/jcepbesigned" allowedMethods="POST"/>
+		<logger level="INFO" doc:name="Logger" doc:id="6cc36de5-ed5f-48f0-b8a7-1d2dbab43e5b" message="Received payload: #[payload]"/>
+		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="509870c5-4a99-48b1-b020-c58a8a163f63" variableName="payloadmsg"/>
+		<crypto:jce-sign-pbe doc:name="Jce sign pbe" doc:id="8fd7852f-7988-427c-bffd-953af6bfb75b" password="Mulesoft" target="jcesignpbe">
+			<crypto:content ><![CDATA[#[vars.payloadmsg]]]></crypto:content>
+		</crypto:jce-sign-pbe>
+		<logger level="INFO" doc:name="Logger" doc:id="853a51aa-58a8-4662-89ae-29af5bacd4da" message="jce singed pbe: #[vars.jcesignpbe]"/>
+		<crypto:jce-validate-pbe doc:name="Jce validate pbe" doc:id="1c288265-edf3-45c0-883b-36e0a126c695" password="Mulesoft" value="#[vars.payloadmsg]" expected="#[vars.jcesignpbe]" />
+		<logger level="INFO" doc:name="Logger" doc:id="3fca4694-b4ba-4dca-b151-0b02763fcf3d" message='#["validated successfully."]'/>
+	</flow>
+	<flow name="jceencrypt" doc:id="c99c9c86-5c01-4635-9ec7-111215872af6" >
+		<http:listener doc:name="Listener" doc:id="7eb98419-dddd-46a7-ba05-3424d8473cbe" config-ref="HTTP_Listener_config" path="/jceencrypt" allowedMethods="POST"/>
+		<logger level="INFO" doc:name="Logger" doc:id="3907a335-24e6-4989-af21-d176cf934d31" message="Received payload for jce encrypt: #[payload]"/>
+		<crypto:jce-encrypt doc:name="Jce encrypt" doc:id="b11e215e-2ca5-45a2-b8bc-2d8ff74e9668" config-ref="Crypto_Jce" algorithm="AES" keyId="jceks">
+		</crypto:jce-encrypt>
+		<ee:transform doc:name="Transform Message" doc:id="38fd9f06-7369-4d97-b28a-4ddf35479b63" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import toBase64 from dw::core::Binaries
+import dw::Crypto
+output application/java
+---
+toBase64(payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="75ba1e4f-e36e-4848-8517-7d7c14137846" message="Encrypted payload: #[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="e53228fc-e02f-468e-9214-731874055999">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import fromBase64 from dw::core::Binaries
+output application/octet-stream
+---
+fromBase64(payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<crypto:jce-decrypt doc:name="Jce decrypt" doc:id="93a5445e-408f-4eac-9dd0-9df53769288e" config-ref="Crypto_Jce2" algorithm="AES" keyId="jceks" />
+		<logger level="INFO" doc:name="Logger" doc:id="6f973768-1529-4524-a304-a477773d54b0" message="Decrypted payload: #[payload]" />
+	</flow>
+</mule>

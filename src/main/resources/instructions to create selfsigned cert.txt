@@ -1,0 +1,7 @@
+ankurparashar@ankurs-MacBook-Pro ~ % 
+keytool -genseckey -keystore /Users/ankurparashar/Desktop/selfsigned.jck -storetype jceks -storepass password -keyalg 
+AES -keysize 128 -alias aeskey -keypass password
+
+Warning:
+The JCEKS keystore uses a proprietary format. It is recommended to migrate to PKCS12 which is an industry standard format using "keytool -importkeystore -srckeystore /Users/ankurparashar/Desktop/selfsigned.jck -destkeystore /Users/ankurparashar/Desktop/selfsigned.jck -deststoretype pkcs12".
+ankurparashar@ankurs-MacBook-Pro ~ % 
